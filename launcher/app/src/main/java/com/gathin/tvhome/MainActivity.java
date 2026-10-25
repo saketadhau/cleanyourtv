@@ -14,6 +14,7 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.ResolveInfo;
+import android.content.res.ColorStateList;
 import android.content.pm.ChangedPackages;
 import android.content.res.ColorStateList;
 import android.content.res.Resources;
@@ -220,6 +221,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     // Static so they survive the activity being destroyed while another app is open (low-memory TVs,
     // or Developer options → "Don't keep activities"); they only reset when the process dies.
     private static int lastFocused = 0;
+    /** minimal_dock: rows below the dock stay hidden until focus moves into them. */
+    private boolean minimalDock, gridRevealed;
     /** App of the last focused tile, so focus follows it when the app list changes. */
     private static String lastFocusedKey;
     private float density;
@@ -513,6 +516,14 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         hiddenApps = new HashSet<>(cfg.hiddenApps);
 
         grid = findViewById(R.id.grid);
+        minimalDock = cfg.minimalDock && cfg.dockRow && !cfg.singleRow;
+        if (minimalDock) {
+            // Narrow the grid before the first tiles are made: their size comes from the grid's inner width. The grid
+            // spans the display less the content column's 56dp padding on each side (activity_main.xml).
+            int gridWidth = getResources().getDisplayMetrics().widthPixels - Math.round(2 * 56 * density);
+            int side = AppAdapter.minimalSidePaddingPx(gridWidth, cfg.columns, density);
+            grid.setPadding(side, grid.getPaddingTop(), side, grid.getPaddingBottom());
+        }
         rtlAppGrid = getResources().getBoolean(R.bool.rtl_app_grid);
         // Mirror only the app grid; the header and other locales keep their own layouts.
         // single_row: one span laid out sideways, so the same adapter, glass and dock band serve a scrolling row.
@@ -605,6 +616,14 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         int rowsBelowDock = cfg.rowsBelowDock;
         grid.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> {
             int h = b - t;
+            if (minimalDock) {
+                int side = AppAdapter.minimalSidePaddingPx(r - l, COLUMNS, density);
+                if (grid.getPaddingLeft() != side) {
+                    // The window was not the display's width: re-centre, and remake the tiles at the new size.
+                    grid.setPadding(side, grid.getPaddingTop(), side, grid.getPaddingBottom());
+                    grid.post(() -> grid.setAdapter(adapter));
+                }
+            }
             // Item height follows the tile size, which follows the columns and the rows that must fit (AppAdapter.tileWidthPx).
             int inner = (r - l) - grid.getPaddingLeft() - grid.getPaddingRight();
             int tileW = AppAdapter.tileWidthPx(inner, h, COLUMNS, rowsBelowDock, cfg.dockTitle, cfg.dockRow, density);
@@ -767,6 +786,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             makeIconOnly((TextView) btnSettings);
         }
         if (cfg.iconOnlyInputs) makeIconOnly((TextView) btnInputs);
+        if (cfg.darkText) applyDarkText();
         btnSettings.setOnLongClickListener(v -> {
             showSettingsMenu();
             return true;
@@ -1472,6 +1492,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             return pos != RecyclerView.NO_POSITION && movingKey.equals(adapter.keyAt(pos)) ? 1f : 0.45f;
         }
         if (dockEditSlot >= 0 && pos >= 0 && pos < COLUMNS && pos != dockEditSlot) return 0.45f;
+        if (minimalDock && !gridRevealed && pos >= COLUMNS) return 0f;
         return 1f;
     }
 
@@ -1620,6 +1641,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     public void onTileFocused(int position, View card) {
         lastFocused = position;
         lastFocusedKey = adapter.keyAt(position);
+        if (minimalDock && gridRevealed != (position >= COLUMNS)) {
+            gridRevealed = position >= COLUMNS;
+            dimOthers();
+        }
         // Focus restored before the first layout (cold start): the tile has no size yet, and the glass
         // would be sized to 2*pad. Run again once the tile is laid out.
         if (card.getWidth() == 0) {
@@ -2740,6 +2765,26 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         setFestiveIcon(settings, marigold);
         addFocusAction(inputs, bell::ring);
         addFocusAction(settings, marigold::turn);
+    }
+
+    /** dark_text: black clock, greeting and date, and light top buttons, for a bright wallpaper photo. */
+    private void applyDarkText() {
+        greetingColor = 0xD9000000;
+        greeting.setTextColor(greetingColor);
+        ((TextView) findViewById(R.id.clock)).setTextColor(0xFF000000);
+        ((TextView) findViewById(R.id.ampm)).setTextColor(0xCC000000);
+        ((TextView) findViewById(R.id.date)).setTextColor(0xCC000000);
+        shamsiDate.setTextColor(0xE6000000);
+        findViewById(R.id.clockDivider).setBackgroundColor(0x4D000000);
+        ColorStateList text = getResources().getColorStateList(R.color.pill_text_light, getTheme());
+        ViewGroup buttons = findViewById(R.id.topButtons);
+        for (int i = 0; i < buttons.getChildCount(); i++) {
+            if (!(buttons.getChildAt(i) instanceof TextView)) continue;
+            TextView pill = (TextView) buttons.getChildAt(i);
+            pill.setBackgroundResource(R.drawable.pill_bg_light);
+            pill.setTextColor(text);
+            pill.setCompoundDrawableTintList(text);
+        }
     }
 
     private static void setFestiveIcon(TextView pill, Drawable icon) {

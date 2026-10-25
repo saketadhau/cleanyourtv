@@ -144,6 +144,8 @@ A new key needs one there in the same pull request.
 | `dock_band` | bool | Draw the dock band and its edge (`true` by default); `false` leaves the tiles floating on the wallpaper with no band, border or dark slab |
 | `single_row` | bool | Every app in the dock's row, the dock apps first, scrolling sideways; no grid below (`false` by default; needs `dock_row`) |
 | `dock_band_all` | bool | With `single_row`, the band runs behind every app in the row, not only the dock apps (`false` by default) |
+| `dark_text` | bool | Black clock, greeting and date, and light frosted top buttons with black text and icons (dark when focused), for a bright photo wallpaper (`false` by default) |
+| `minimal_dock` | bool | A minimal dock: the grid narrowed to a centred block of `columns` small tiles (the size 8 columns would give), and the rows below the dock hidden until Down moves into them; pair with `dock_band`, `dock_title` and `fill_dock` false; ignored with `single_row` (`false` by default) |
 | `ambient_glow` | bool | The glow behind the dock in the focused app's colour (`true` by default); `false` keeps only `background_color` or the wallpaper, e.g. for a calm photo background |
 | `app_glow` | bool | The focus highlight glows in the focused app's colour on every tile, as `cinematic_home` does for the dock (`false` by default) |
 | `fade_rows` | bool | The rows fade out as they scroll up under the clock instead of being cut off at a hard line; the wallpaper or sky shows through. The grid then draws into a hardware layer (about 6 MB of graphics memory at 1080p) (`false` by default) |

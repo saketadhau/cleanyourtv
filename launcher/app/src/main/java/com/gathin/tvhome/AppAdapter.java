@@ -169,6 +169,22 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     /** The smallest share of the width-only tile size that fitting rows_below_dock into the height may go to. */
     static final float MIN_HEIGHT_FIT = 0.85f;
 
+    /** minimal_dock: tiles at the size this many columns across the full width would give. */
+    static final int MINIMAL_SIZE_COLUMNS = 8;
+
+    /**
+     * minimal_dock: the grid's side padding that leaves `columns` cells of the MINIMAL_SIZE_COLUMNS layout,
+     * centred in a grid this wide (its own 10dp padding included).
+     */
+    static int minimalSidePaddingPx(int gridWidthPx, int columns, float density) {
+        int base = Math.round(10 * density);
+        int inner = gridWidthPx - 2 * base;
+        if (inner <= 0 || columns <= 0) return base;
+        int cell = inner / Math.max(columns, MINIMAL_SIZE_COLUMNS);
+        int want = Math.min(inner, columns * cell);
+        return base + (inner - want) / 2;
+    }
+
     private final Context ctx;
     private final int rowsBelowDock;
     private final boolean dockTitle;

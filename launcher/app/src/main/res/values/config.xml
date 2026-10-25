@@ -276,6 +276,14 @@
     <!-- With single_row, the band runs behind every app in the row, apps installed later included, instead of
          the dock apps only. Can also be set with "dock_band_all" in a theme. -->
     <bool name="dock_band_all">false</bool>
+    <!-- Black clock, greeting and date, and light-glass top buttons with black text, for a bright wallpaper
+         photo. A theme can set it with "dark_text": true. -->
+    <bool name="dark_text">false</bool>
+
+    <!-- A minimal dock like the tvOS home: the grid narrowed to a centred block of
+         `columns` small tiles (the size 8 columns would give), and the rows below the dock hidden until Down
+         moves into them. Use with dock_band, dock_title and fill_dock false. A theme can set "minimal_dock": true. -->
+    <bool name="minimal_dock">false</bool>
     <!-- The dock band's padding equals the gap between its tiles on all four sides (as far as the grid's edges leave room),
          so its corners are concentric with the tiles' and the spacing reads even. false (the default) keeps the fixed
          14dp above and below, up to 22dp at the sides and 26dp corners. Can also be set with "dock_even_padding": true in a theme's config.json. -->
